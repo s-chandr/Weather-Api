@@ -20,7 +20,7 @@ class city(db.Model):
     city_state = db.Column(db.String(50), nullable=False)
     TimeNoted = db.Column(db.String(50), nullable=False)
     pat = db.Column(db.String(15), nullable=False)
-    present_time=db.Column(db.String(50), nullable=False)
+    present_time=db.Column(db.String(80), nullable=False)
 
     def __repr__(self):
         return '<City %r>'%self.city_name
@@ -61,31 +61,41 @@ def index():
     time_api='uqdgVpGRG38uAVG58xQGjKd2ERgzyw'
     if request.method == 'POST':
         city_name = str(request.form['city_name'])
-        print(city_name)
+        #print(city_name)
         r = requests.get('http://api.openweathermap.org/data/2.5/weather?q={0}&appid={1}'.format(city_name, open_weather_api))
         t = requests.get('https://www.amdoren.com/api/timezone.php?api_key={0}&loc={1}'.format(time_api,city_name ))
-        if r:
+        if r and city_name.upper() != "SEX":
             weather_value = r.json()
             celsius = float((int(weather_value['main']['temp']))) - 273.15
             celsius = round(celsius,1)
             time_details=t.json()
             present_datetime=time_details["time"]
             #create dictionary to hold and pass data to html properly
+            #return r.json()
             city_weather = {
-                'city_name': city_name.upper(),
+                'city_name': weather_value['name'],
                 'temp': str(celsius),
                 'main': weather_value['weather'][0]['main']
             }
             timestamp=datetime.utcfromtimestamp(int(weather_value["dt"])).strftime('%H:%M:%S %d-%m-%Y')
-            tag = int(present_datetime[11:13])
             pat = ""
-            if tag<=12:
-                pat += "day"
-            elif tag<=18:
-                pat += "evening-morning"
-            elif tag<=23:
-                pat += "night"
+            #time_details["error_message"]
+            if time_details["error_message"] == "API limit reached: F, 10."  :
 
+                pat +="day"
+                present_datetime="Time api limit reached!!"
+            else :
+
+
+
+                tag = int(present_datetime[11:13])
+
+                if tag<=12:
+                    pat += "day"
+                elif tag<=18:
+                    pat += "evening-morning"
+                elif tag<=23:
+                    pat += "night"
             exists = city.query.filter_by(city_name=city_weather['city_name']).first()
             if not exists:
                 city_variable = city(city_name=city_weather['city_name'],city_state=city_weather['main'],city_temperature=city_weather['temp'],
