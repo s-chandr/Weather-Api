@@ -48,6 +48,7 @@ def delete_city(city_id):
     del_city = city.query.filter_by(id=city_id).first()
     db.session.delete(del_city)
     db.session.commit()
+    flash("Succesfully deleted !")
     return redirect('/')
 
 
@@ -64,7 +65,14 @@ def index():
         #print(city_name)
         r = requests.get('http://api.openweathermap.org/data/2.5/weather?q={0}&appid={1}'.format(city_name, open_weather_api))
         t = requests.get('https://www.amdoren.com/api/timezone.php?api_key={0}&loc={1}'.format(time_api,city_name ))
-        if r and city_name.upper() != "SEX":
+
+        if r.json()['cod'] =="404" or city_name.upper() == "SEX":
+            flash("The city doesn't exist!")
+            return redirect('/')
+        elif(city_name==""):
+            flash("Please Enter city name")
+            return redirect('/')
+        else:
             weather_value = r.json()
             celsius = float((int(weather_value['main']['temp']))) - 273.15
             celsius = round(celsius,1)
@@ -112,8 +120,6 @@ def index():
                 exists.present_time=present_datetime
                 db.session.commit()
 
-        else:
-            flash("The city doesn't exist!")
         #return city_weather
     # fresh_list=[]
     # for item in list(city.query.all()):
@@ -167,7 +173,7 @@ def index():
 
 # don't change the following way to run flask:
 if __name__ == '__main__':
-    db.drop_all()
+    #db.drop_all()
     db.create_all()
     app.secret_key = 'super secret key'
     #app.config['SESSION_TYPE'] = 'filesystem'
