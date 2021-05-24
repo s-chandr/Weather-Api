@@ -173,7 +173,7 @@ def index():
 
 # don't change the following way to run flask:
 if __name__ == '__main__':
-    #db.drop_all()
+    db.drop_all()
     db.create_all()
     app.secret_key = 'super secret key'
     #app.config['SESSION_TYPE'] = 'filesystem'
