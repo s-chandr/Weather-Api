@@ -60,10 +60,10 @@ def index():
         t = requests.get('https://timezone.abstractapi.com/v1/current_time/?api_key={0}&location={1}'.format(time_api,city_name))
         global our_citys
         if r.json()['cod'] =="404" or city_name.upper() == "SEX":
-            flash("The city doesn't exist!")
+            #flash("The city doesn't exist!")
             return redirect('/')
         elif(city_name==""):
-            flash("Please Enter city name")
+            #flash("Please Enter city name")
             return redirect('/')
         else:
             weather_value = r.json()
@@ -140,7 +140,7 @@ def delete_city(city_id):
     del_city = city.query.filter_by(id=city_id).first_or_404(description='There is no data with {}'.format(city_id))
     db.session.delete(del_city)
     db.session.commit()
-    flash("Succesfully deleted !")
+    #flash("Succesfully deleted !")
     return render_template('delete_city.html', our_citys=our_citys)
 
 @app.errorhandler(404)
