@@ -8,7 +8,7 @@ from flask import request,flash
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///weather.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///weather.db?check_same_thread=False'
 db = SQLAlchemy(app)
 
 
@@ -41,15 +41,6 @@ class city(db.Model):
 #     db.session.delete(del_city)
 #     db.session.commit()
 #     return redirect('/')
-@app.route('/delete_city/<city_id>', methods=['GET', 'POST'])
-def delete_city(city_id):
-    #del_city = city.query.filter_by(city_name=request.form['tobedeleted']).first()
-    #return str(request.form['tobedeleted'])
-    del_city = city.query.filter_by(id=city_id).first()
-    db.session.delete(del_city)
-    db.session.commit()
-    flash("Succesfully deleted !")
-    return redirect('/')
 
 
 
@@ -59,13 +50,15 @@ def index():
     city_name = None
     city_weather = None
     open_weather_api = '52fa4e1decd455f1fb5d606852318947'
-    time_api='uqdgVpGRG38uAVG58xQGjKd2ERgzyw'
+    time_api='82cfd343470846438bc7522eacfefae1'
     if request.method == 'POST':
         city_name = str(request.form['city_name'])
-        #print(city_name)
-        r = requests.get('http://api.openweathermap.org/data/2.5/weather?q={0}&appid={1}'.format(city_name, open_weather_api))
-        t = requests.get('https://www.amdoren.com/api/timezone.php?api_key={0}&loc={1}'.format(time_api,city_name ))
 
+
+        r = requests.get('http://api.openweathermap.org/data/2.5/weather?q={0}&appid={1}'.format(city_name, open_weather_api))
+        #t = requests.get('https://www.amdoren.com/api/timezone.php?api_key={0}&loc={1}'.format(time_api,city_name ))
+        t = requests.get('https://timezone.abstractapi.com/v1/current_time/?api_key={0}&location={1}'.format(time_api,city_name))
+        global our_citys
         if r.json()['cod'] =="404" or city_name.upper() == "SEX":
             flash("The city doesn't exist!")
             return redirect('/')
@@ -77,7 +70,9 @@ def index():
             celsius = float((int(weather_value['main']['temp']))) - 273.15
             celsius = round(celsius,1)
             time_details=t.json()
-            present_datetime=time_details["time"]
+            global present_datetime
+
+            present_datetime=time_details["datetime"]
             #create dictionary to hold and pass data to html properly
             #return r.json()
             city_weather = {
@@ -85,13 +80,15 @@ def index():
                 'temp': str(celsius),
                 'main': weather_value['weather'][0]['main']
             }
+            global timestamp
             timestamp=datetime.utcfromtimestamp(int(weather_value["dt"])).strftime('%H:%M:%S %d-%m-%Y')
+            global pat
             pat = ""
             #time_details["error_message"]
-            if time_details["error_message"] == "API limit reached: F, 10."  :
+            if str(present_datetime) =="{}":
 
                 pat +="day"
-                present_datetime="Time api limit reached!!"
+                present_datetime="Present Time NA"
             else :
 
 
@@ -104,6 +101,7 @@ def index():
                     pat += "evening-morning"
                 elif tag<=23:
                     pat += "night"
+            global exists
             exists = city.query.filter_by(city_name=city_weather['city_name']).first()
             if not exists:
                 city_variable = city(city_name=city_weather['city_name'],city_state=city_weather['main'],city_temperature=city_weather['temp'],
@@ -112,7 +110,7 @@ def index():
                 db.session.commit()
             else:
                 #update the enty if exists
-                flash("The city already added , entry updated !! ")
+                flash("The city already added , entry updated !!")
                 exists.city_temperature=city_weather['temp']
                 exists.city_state=city_weather['main']
                 exists.TimeNoted=(timestamp)
@@ -135,6 +133,21 @@ def index():
     return render_template('index.html', our_citys=our_citys)
      #redirect(url_for('index'))
     #return render_template('index.html', weather=city_weather)
+@app.route('/delete_city/<city_id>', methods=['GET', 'POST'])
+def delete_city(city_id):
+    #del_city = city.query.filter_by(city_name=request.form['tobedeleted']).first()
+    #return str(request.form['tobedeleted'])
+    del_city = city.query.filter_by(id=city_id).first_or_404(description='There is no data with {}'.format(city_id))
+    db.session.delete(del_city)
+    db.session.commit()
+    flash("Succesfully deleted !")
+    return render_template('delete_city.html', our_citys=our_citys)
+
+@app.errorhandler(404)
+def not_found(e):
+
+
+  return render_template("404.html")
 
 # @app.route('/add',methods=['GET','POST'])
 #
