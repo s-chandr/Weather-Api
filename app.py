@@ -141,12 +141,11 @@ def delete_city(city_id):
     db.session.delete(del_city)
     db.session.commit()
     #flash("Succesfully deleted !")
-    return render_template('delete_city.html', our_citys=our_citys)
+    #return render_template('delete_city.html', our_citys=our_citys)
+    return redirect('/')
 
 @app.errorhandler(404)
 def not_found(e):
-
-
   return render_template("404.html")
 
 # @app.route('/add',methods=['GET','POST'])
